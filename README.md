@@ -69,7 +69,7 @@ docker ps
    ```bash
    python3 producer.py
    ```
-   Kết quả: Producer sẽ gửi 10 tin nhắn vào topic `test-topic` trên Kafka.
+   Kết quả: Producer sẽ gửi tin nhắn vào topic `csv_topic` trên Kafka.
 
 ### Lấy dữ liệu bằng Consumer
 
@@ -77,7 +77,7 @@ docker ps
    ```bash
    python3 consumer.py
    ```
-   Kết quả: Consumer sẽ nhận và hiển thị từng tin nhắn được gửi từ topic `test-topic`.
+   Kết quả: Consumer sẽ nhận và hiển thị từng tin nhắn được gửi từ topic `csv_topic`.
 
 ---
 
