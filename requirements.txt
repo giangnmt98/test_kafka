@@ -1,2 +1,2 @@
-kafka-python
-pandas
+confluent-kafka==2.8.0
+pandas== 2.2.3

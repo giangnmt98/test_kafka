@@ -61,15 +61,19 @@ docker ps
 
 ---
 
+---
+
+## Cài Đặt Thư Viện Từ File `requirements.txt`
+
+Trước khi chạy Producer và Consumer, bạn cần cài đặt các thư viện cần thiết được liệt kê trong file `requirements.txt`.
+Để cài đặt, chạy lệnh sau:
+
+```bash
+pip install -r requirements.txt
+```
+
+Đảm bảo bạn đã kích hoạt môi trường Python (virtual environment) nếu cần thiết trước khi chạy lệnh trên.
 ## Hướng Dẫn Chạy Producer và Consumer
-
-### Tạo dữ liệu bằng Producer
-
-1. Chạy lệnh:
-   ```bash
-   python3 producer.py
-   ```
-   Kết quả: Producer sẽ gửi tin nhắn vào topic `csv_topic` trên Kafka.
 
 ### Lấy dữ liệu bằng Consumer
 
@@ -80,16 +84,10 @@ docker ps
    Kết quả: Consumer sẽ nhận và hiển thị từng tin nhắn được gửi từ topic `csv_topic`.
 
 ---
+### Tạo dữ liệu bằng Producer
 
-## Ghi chú quan trọng:
-
-1. **Cấu hình đúng brokers**: Đảm bảo các địa chỉ trong `producer.py` và `consumer.py` đúng với cấu hình Kafka Broker.
-2. **Quản lý offset**: Consumer cần kiểm soát offset phù hợp để không xử lý trùng lặp dữ liệu.
-3. Cài đặt các thư viện Python cần thiết trước:
+1. Chạy lệnh:
    ```bash
-   pip install kafka-python
+   python3 producer.py
    ```
-4. Nếu có lỗi kết nối, kiểm tra lại docker hoặc logs từ Kafka/Zookeeper để tìm nguyên nhân.
-
-Dự án này sẽ giúp bạn hiểu rõ cách sử dụng Kafka và ứng dụng nó trong các hệ thống xử lý dữ liệu lớn. Chúc bạn thành
-công!
+   Kết quả: Producer sẽ gửi tin nhắn vào topic `csv_topic` trên Kafka.
