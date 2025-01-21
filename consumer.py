@@ -8,26 +8,25 @@ consumer_config = {
 }
 
 consumer = Consumer(consumer_config)
-consumer.subscribe(['csv_topic'])  # Đăng ký topic Kafka để lắng nghe
+consumer.subscribe(['csv_topic_1', 'csv_topic_2'])  # Đăng ký lắng nghe 2 topic
 
-print("Consumer bắt đầu lắng nghe tin nhắn...")
+print("Consumer bắt đầu lắng nghe tin nhắn từ csv_topic_1 và csv_topic_2...")
 
 try:
     while True:
-        msg = consumer.poll(timeout=1.0)  # Lấy tin nhắn từ topic
+        msg = consumer.poll(timeout=1.0)
         if msg is None:
             continue  # Không có tin nhắn nào trong khoảng thời gian timeout
         if msg.error():
             print(f"Lỗi: {msg.error()}")
             continue
 
-        # Hiển thị tin nhắn với dấu phân tách "="
-        print("=" * 50)  # In ra 50 dấu "=" để phân cách giữa các tin nhắn
-        print(f"Partition: {msg.partition()}")  # Partition nhận tin nhắn
-        print(f"Offset: {msg.offset()}")  # Offset của tin nhắn
+        # Hiển thị tin nhắn với phân cách
+        print("=" * 50)  # Đánh dấu tin nhắn mới
+        print(f"Topic: {msg.topic()}")  # Hiển thị topic gửi tin nhắn
         print(f"Message:\n{msg.value().decode('utf-8')}")  # Nội dung tin nhắn
-        print("=" * 50)  # Kết thúc phân cách
-        print("\n")  # In thêm dòng trống để ngăn cách rõ ràng hơn
+        print("=" * 50)
+        print("\n")
 
 except KeyboardInterrupt:
     print("\nConsumer đã dừng.")
