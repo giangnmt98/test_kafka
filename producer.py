@@ -1,129 +1,73 @@
-"""
-This is the main module for the Kafka producer, reading data from parquet files,
-and sending it to Kafka topics using multi-threading.
-"""
-
-import os
-import json
-import time
+import csv
 import random
-import threading
-import pandas as pd
+import time
 from kafka import KafkaProducer
 from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.errors import KafkaTimeoutError, NoBrokersAvailable
 
 
-def load_data(folder_path='data'):
-    """
-    Load data from parquet files in the given folder and store in a dictionary.
-
-    Args:
-        folder_path (str): Path to the folder containing parquet files.
-
-    Returns:
-        tuple: List of topics and dictionary of data loaded from parquet files.
-    """
-    list_topic = []
-    data_dict = {}
-    for file_name in os.listdir(folder_path):
-        if '.parquet' in file_name and file_name not in ['user_embedding.parquet', 'tag_definitions.parquet']:
-            list_topic.append(file_name.split('.')[0])
-            try:
-                data = pd.read_parquet(os.path.join(folder_path, file_name))
-                data['source'] = file_name.split('.')[0]
-                data = data[['source', 'date_time', 'content_id', 'content_type', 'profile_id', 'duration']]
-                data_dict[file_name.split('.')[0]] = data.to_json(orient='records')
-                print(f"Loaded data from {file_name} into {file_name} variable.")
-            except (FileNotFoundError, pd.errors.EmptyDataError):
-                print(f"Error loading file {file_name}.")
-    return list_topic, data_dict
+# Hàm để serialize dữ liệu sang dạng chuỗi UTF-8
+def utf8_serializer(data):
+    return data.encode('utf-8')
 
 
-def thread_worker(kafka_producer, json_str, topic_name, index):
-    """
-    Worker function for threading to process and send messages to Kafka topics.
+producer = KafkaProducer(
+    bootstrap_servers=['localhost:9092'],  # Địa chỉ Kafka của bạn
+    value_serializer=utf8_serializer
+)
 
-    Args:
-        kafka_producer (KafkaProducer): Kafka producer instance.
-        json_str (str): JSON string of data to be sent.
-        topic_name (str): Kafka topic name.
-        index (int): Thread index.
-    """
-    json_list = json.loads(json_str)
-    for item in json_list:
-        print(f"Thread-{index} processed topic: {topic_name}")
-        kafka_producer.send(topic_name, item)
-        time.sleep(random.randint(1, 3))
+topic_name = "csv_topic"  # Tên topic Kafka
 
 
-def send_messages(kafka_producer, list_topic, data_dict):
-    """
-    Create and start threads to send messages to Kafka.
-
-    Args:
-        kafka_producer (KafkaProducer): Kafka producer instance.
-        list_topic (list): List of Kafka topics.
-        data_dict (dict): Dictionary containing data to be sent.
-    """
-    threads = [
-        threading.Thread(
-            target=thread_worker,
-            args=(kafka_producer, data_dict.get(list(data_dict.keys())[i]), list_topic[i], i)
-        ) for i in range(len(list_topic))
-    ]
-
-    for thread in threads:
-        thread.start()
-
-    for thread in threads:
-        thread.join()
-
-    print("All threads have finished.")
-
-
-def serializer(message):
-    """
-    Serializes a message to JSON and encodes it to UTF-8.
-
-    Args:
-        message (dict): The message to be serialized.
-
-    Returns:
-        bytes: Serialized JSON message.
-    """
-    return json.dumps(message).encode('utf-8')
-
-
-def create_kafka_client():
-    """
-    Creates and returns a Kafka producer and admin client.
-
-    Returns:
-        tuple: Kafka producer and admin client.
-    """
-    while True:
-        try:
-            producer = KafkaProducer(
-                bootstrap_servers=['localhost:9092'],
-                value_serializer=serializer
-            )
-            admin_client = KafkaAdminClient(
-                bootstrap_servers='localhost:9092'
-            )
-            print("Successfully connected to Kafka at localhost:9092")
-            return producer, admin_client
-        except (KafkaTimeoutError, NoBrokersAvailable, ValueError) as e:
-            print(f"Kafka connection error: {e}")
-            time.sleep(3)
-
-
-if __name__ == '__main__':
-    list_topic, data_dict = load_data()
-    kafka_producer, admin_client = create_kafka_client()
-
-    if 'online_feature' not in admin_client.list_topics():
-        topic_list = [NewTopic(name="online_feature", num_partitions=1, replication_factor=1)]
+# Hàm đăng ký (tạo) topic Kafka nếu chưa tồn tại
+def create_topic(topic_name, num_partitions=1, replication_factor=1):
+    admin_client = KafkaAdminClient(
+        bootstrap_servers=['localhost:9092'],  # Địa chỉ Kafka của bạn
+    )
+    try:
+        # Tạo topic mới
+        topic_list = [
+            NewTopic(name=topic_name, num_partitions=num_partitions, replication_factor=replication_factor)
+        ]
         admin_client.create_topics(new_topics=topic_list, validate_only=False)
+        print(f"Topic '{topic_name}' đã được tạo thành công.")
+    except Exception as e:
+        # Nếu topic đã tồn tại hoặc có lỗi khác
+        print(f"Không thể tạo topic '{topic_name}': {e}")
+    finally:
+        admin_client.close()
 
-    send_messages(kafka_producer=kafka_producer, list_topic=list_topic, data_dict=data_dict)
+
+# Hàm để đọc dữ liệu từ file CSV
+def read_csv(file_path):
+    with open(file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+        data = [row for row in csv_reader]  # Lưu tất cả các dòng trong file CSV vào list
+    return data
+
+
+if __name__ == "__main__":
+    csv_file_path = "data.csv"  # Đường dẫn tới file CSV
+    rows = read_csv(csv_file_path)  # Đọc tất cả các dòng từ file CSV
+    print(f"Đã đọc {len(rows)} dòng từ file CSV.")
+
+    # # Đăng ký hoặc kiểm tra topic
+    # create_topic(topic_name)
+
+    print("Producer bắt đầu gửi tin nhắn...")
+    while rows:  # Tiếp tục gửi cho đến khi hết dữ liệu
+        # Chọn số dòng ngẫu nhiên (1 dòng hoặc nhiều dòng)
+        num_rows = random.randint(1, 5)  # Gửi ngẫu nhiên từ 1 đến 5 dòng
+        selected_rows = rows[:num_rows]  # Lấy ra những dòng sẽ gửi
+        rows = rows[num_rows:]  # Cập nhật lại danh sách, xóa những dòng đã gửi
+
+        # Tạo thông điệp
+        message = "\n".join([",".join(row) for row in selected_rows])
+        producer.send(topic_name, message)  # Gửi thông điệp tới Kafka
+        # print(f"Đã gửi {num_rows} dòng:\n{message}")
+
+        # Đợi thời gian ngẫu nhiên trước khi gửi tiếp
+        time_to_sleep = random.uniform(1, 5)  # Khoảng thời gian ngẫu nhiên từ 1 đến 5 giây
+        # print(f"Đợi {time_to_sleep:.2f} giây trước khi gửi tiếp...")
+        time.sleep(time_to_sleep)  # Tạm dừng trong khoảng thời gian ngẫu nhiên
+
+    print("Tất cả dữ liệu đã được gửi.")

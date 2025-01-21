@@ -1,4 +1,2 @@
-apache-flink==1.17.0
-redis==5.0.1
 kafka-python
 pandas
