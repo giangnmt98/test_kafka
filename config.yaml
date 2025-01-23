@@ -1,0 +1,23 @@
+ kafka_producer:
+   bootstrap_servers: "localhost:9092"
+   csv_path: "data/70K_sample.csv"
+   delimiter: "|"
+
+kafka_consumer:
+  bootstrap_servers: "localhost:9092"
+  group_id: "utf8-group"
+  auto_offset_reset: "earliest"
+  fetch_max_bytes: 52428800
+  max_partition_fetch_bytes: 52428800
+
+topics:
+  - name: "serving_data_topic"
+    handler: "process_serving_data"
+
+  - name: "deduplicate_data_topic"
+    handler: "process_deduplicate_data"
+
+retry:
+  max_attempts: 3
+  chunk_size: 1048576   # 1MB
+  max_workers: 4        # Number of threads concurrently processing chunks

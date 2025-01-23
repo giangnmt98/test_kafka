@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "antispamkafka"
+version = "0.1"
+description = "Giả lập luồng bắn và nhận tin kafka mesage cho dự an Antispam"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "VNPTIC@DS", email = "vnptai@vnpt.vn" }
+]
+dependencies = [
+    "confluent-kafka==2.8.0",
+    "pandas==2.2.3",
+    "pyarrow==19.0.0",
+    "pyyaml==6.0.2",
+    "pandas-stubs"
+    # Add other dependencies from requirements.txt
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==24.8.0",
+    "flake8==7.1.1",
+    "pylint==3.2.7",
+    "mypy==1.11.2",
+    "isort==5.13.2",
+    "types-PyYAML==6.0.12.12",
+    "pre-commit==3.4.0",
+    "pytest==7.4.2",
+    "colorlog==6.8.2"
+    # Add other dev dependencies here
+]
+
+[tool.setuptools]
+packages = ["antispamkafka"]
