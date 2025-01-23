@@ -1,18 +1,18 @@
-"""This module implements a Kafka consumer for consuming and processing messages
-from Kafka topics. It supports dynamic handler functions, retry mechanisms for
-message processing, and multithreaded processing for large messages. Configuration
-is loaded from a YAML file, and logging is used to track operations.
-"""
+"""Kafka consumer module with dynamic handler loading and YAML-based configuration."""
+
+import importlib
 import logging
 import threading
 import time
+
 from confluent_kafka import Consumer, KafkaError
+
+from antispamkafka.handlers import process_default
 from antispamkafka.utils.helpers import (
     process_large_message_in_parallel,
     retry,
     save_to_error_file,
 )
-from antispamkafka.handlers import process_default
 from antispamkafka.utils.logger import Logger
 from antispamkafka.utils.utils import load_config, map_kafka_config
 
@@ -22,16 +22,43 @@ logger = Logger(
 ).get_logger()
 
 
-def get_handler_function(name):
+def get_handler_function(handler_name, handler_mapping):
     """
-    Dynamically fetch the handler function by name.
-    If the function name is not found, it defaults to `process_default`.
+    Fetch the handler function dynamically by consulting the mapping from YAML.
+    Fallback to process_default if handler is not found.
+
     Args:
-        name (str): Name of the handler function.
+        handler_name (str): Short name of the handler.
+        handler_mapping (dict): Mapping of handler names to full import paths.
+
     Returns:
         function: The corresponding handler function.
     """
-    return globals().get(name, process_default)
+    handler_path = handler_mapping.get(handler_name, None)
+    if not handler_path:
+        logger.warning(
+            "Handler '%s' not found in mapping. Using default handler.", handler_name
+        )
+        return process_default
+
+    try:
+        # Load the handler dynamically using importlib
+        module_name, function_name = handler_path.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        handler = getattr(module, function_name)
+        logger.info(
+            "Handler '%s' loaded successfully from '%s'", function_name, module_name
+        )
+        return handler
+    except (ImportError, AttributeError) as e:
+        logger.warning(
+            "Failed to dynamically load handler '%s' "
+            "from path '%s': %s. Using default handler.",
+            handler_name,
+            handler_path,
+            e,
+        )
+        return process_default
 
 
 def handle_large_message_with_retry(msg, retry_times, chunk_size, max_workers):
@@ -67,8 +94,9 @@ def handle_large_message_with_retry(msg, retry_times, chunk_size, max_workers):
                 break
 
 
-def consume_topic(topic, consumer_config, handler_function,
-                  retry_config, shutdown_event):
+def consume_topic(
+    topic, consumer_config, handler_function, retry_config, shutdown_event
+):
     """
     Consume messages from a Kafka topic and process them.
     Args:
@@ -148,14 +176,19 @@ def main():
     kafka_config = map_kafka_config(kafka_config)
     topics = config["topics"]
     retry_config = config["retry"]
-    # Create a shutdown event to signal consumers to stop
+    handler_mapping = config.get("handler_mapping", {})  # Load mapping from YAML
+
     shutdown_event = threading.Event()
     threads = []
-    # Start a consumer thread for each topic
+
     for topic_config in topics:
         topic_name = topic_config["name"]
         handler_name = topic_config["handler"]
-        handler_function = get_handler_function(handler_name)
+
+        # Fetch the handler dynamically via YAML mapping
+        handler_function = get_handler_function(handler_name, handler_mapping)
+
+        # Spawn a thread for each topic
         thread = threading.Thread(
             target=consume_topic,
             args=(
@@ -165,18 +198,19 @@ def main():
                 retry_config,
                 shutdown_event,
             ),
+            name=f"ConsumerThread-{topic_name}",
         )
         threads.append(thread)
         thread.start()
+
     try:
         # Keep the program running until interrupted
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        # Handle graceful shutdown on interrupt
         logger.info("Shutdown signal received. Stopping consumers...")
         shutdown_event.set()
-    # Wait for all threads to complete
+
     for thread in threads:
         thread.join()
 

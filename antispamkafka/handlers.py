@@ -4,11 +4,12 @@ for Kafka consumers.
 """
 
 import logging
+
 from antispamkafka.utils.logger import Logger
 
 # Configure logging
 logger = Logger(
-    "KafkaConsumer", log_file="../logs/consumer.log", level=logging.INFO
+    "KafkaConsumer", log_file="logs/consumer.log", level=logging.INFO
 ).get_logger()
 
 
@@ -70,8 +71,4 @@ def process_default(msg):
     Args:
         msg: The Kafka message object.
     """
-    logger.warning(
-        "No handler found for topic: %s. Message: %s",
-        msg.topic(),
-        msg.value().decode("utf-8"),
-    )
+    logger.warning("No handler found for topic: %s.", msg.topic())

@@ -3,8 +3,9 @@ Module containing helper functions for processing Kafka consumer messages
 with retry logic, error handling, and multi-threaded processing.
 """
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from antispamkafka.utils.logger import Logger
 
 # Setup logging: Initialize logger for KafkaConsumer
@@ -35,9 +36,7 @@ def retry(func, *args, max_attempts=3, **kwargs):
         except Exception as e:
             log_retry_metadata(kwargs.get("msg"), attempt + 1, e)
             if attempt == max_attempts - 1:
-                logger.error(
-                    "Max attempts reached. Function %s failed.", func.__name__
-                )
+                logger.error("Max attempts reached. Function %s failed.", func.__name__)
                 return None
     return None
 
@@ -56,9 +55,7 @@ def save_to_error_file(msg, topic):
     error_file = f"/tmp/kafka_error_message_{topic}.txt"
     try:
         with open(error_file, "w", encoding="utf-8") as f:
-            f.write(
-                f"Topic: {msg.topic()}\nMessage:\n{msg.value().decode('utf-8')}"
-            )
+            f.write(f"Topic: {msg.topic()}\nMessage:\n{msg.value().decode('utf-8')}")
         logger.error("Message saved to %s", error_file)
     except Exception as e:
         logger.error("Failed to save error message: %s", e)
@@ -102,12 +99,14 @@ def process_large_message_in_parallel(msg, chunk_size=1024 * 1024, max_workers=4
         topic = msg.topic()
 
         chunks = [
-            message[i: i + chunk_size]
-            for i in range(0, len(message), chunk_size)
+            message[i : i + chunk_size] for i in range(0, len(message), chunk_size)
         ]
 
-        logger.info("Total %d chunks generated"
-                    " for message in topic '%s'", len(chunks), topic)
+        logger.info(
+            "Total %d chunks generated" + " for message in topic '%s'",
+            len(chunks),
+            topic,
+        )
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [executor.submit(process_chunk, chunk, topic) for chunk in chunks]

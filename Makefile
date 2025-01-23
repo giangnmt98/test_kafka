@@ -9,7 +9,7 @@ PYTHON_EXEC := python3
 VENV_DIR := antispamkafka_env
 
 # Directory for storing processed data
-CODE_DIRECTORY := src
+CODE_DIRECTORY := antispamkafka
 
 
 # Virtual environment setup

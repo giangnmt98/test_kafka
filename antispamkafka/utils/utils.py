@@ -33,12 +33,12 @@ def map_kafka_config(yaml_config: dict) -> dict:
     """
 
     field_mapping = {
-        'bootstrap_servers': 'bootstrap.servers',  # Maps to Kafka bootstrap.servers
-        'group_id': 'group.id',  # Maps to Kafka group.id
-        'auto_offset_reset': 'auto.offset.reset',  # Maps to Kafka auto.offset.reset
-        'fetch_max_bytes': 'fetch.max.bytes',  # Maps to Kafka fetch.max.bytes
+        "bootstrap_servers": "bootstrap.servers",  # Maps to Kafka bootstrap.servers
+        "group_id": "group.id",  # Maps to Kafka group.id
+        "auto_offset_reset": "auto.offset.reset",  # Maps to Kafka auto.offset.reset
+        "fetch_max_bytes": "fetch.max.bytes",  # Maps to Kafka fetch.max.bytes
         # Maps to Kafka max.partition.fetch.bytes
-        'max_partition_fetch_bytes': 'max.partition.fetch.bytes'
+        "max_partition_fetch_bytes": "max.partition.fetch.bytes",
     }
 
     kafka_config = {}  # The resulting Kafka Consumer configuration

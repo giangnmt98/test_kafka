@@ -1,23 +1,27 @@
- kafka_producer:
-   bootstrap_servers: "localhost:9092"
-   csv_path: "data/70K_sample.csv"
-   delimiter: "|"
+kafka_producer:
+  bootstrap_servers: "localhost:9092"  # Kafka server address
+  csv_path: "data/70K_sample.csv"      # Path to the CSV file for data production
+  delimiter: "|"                       # CSV delimiter used in the file
 
 kafka_consumer:
-  bootstrap_servers: "localhost:9092"
-  group_id: "utf8-group"
-  auto_offset_reset: "earliest"
-  fetch_max_bytes: 52428800
-  max_partition_fetch_bytes: 52428800
+  bootstrap_servers: "localhost:9092"  # Kafka server address for consumption
+  group_id: "utf8-group"               # Consumer group ID
+  auto_offset_reset: "earliest"        # Configures where to start reading messages if no offset exists
+  fetch_max_bytes: 52428800            # Max bytes to fetch in a single request from Kafka
+  max_partition_fetch_bytes: 52428800  # Max bytes per partition to fetch in a single request
 
 topics:
-  - name: "serving_data_topic"
-    handler: "process_serving_data"
+  - name: "serving_data_topic"         # Topic name for serving data
+    handler: "process_serving_data"    # Function to process messages from this topic
 
-  - name: "deduplicate_data_topic"
-    handler: "process_deduplicate_data"
+  - name: "deduplicate_data_topic"     # Topic name for deduplication
+    handler: "process_deduplicate_data" # Function to process messages from this topic
+
+handler_mapping:
+  process_serving_data: antispamkafka.handlers.process_serving_data
+  process_deduplicate_data: antispamkafka.handlers.process_deduplicate_data
 
 retry:
-  max_attempts: 3
-  chunk_size: 1048576   # 1MB
-  max_workers: 4        # Number of threads concurrently processing chunks
+  max_attempts: 3                      # Maximum number of retry attempts
+  chunk_size: 1048576                  # Data chunk size in bytes (1MB)
+  max_workers: 4                       # Number of threads for concurrent data processing
