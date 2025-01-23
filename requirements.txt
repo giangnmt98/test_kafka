@@ -1,2 +1,5 @@
-confluent-kafka==2.8.0
-pandas== 2.2.3
+confluent-kafka==2.8.0,
+pandas==2.2.3,
+pyarrow==19.0.0,
+pyyaml==6.0.2
+pandas-stubs
